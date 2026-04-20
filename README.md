@@ -10,90 +10,127 @@
 - 趋势对比与洞察生成
 - Telegram 日报推送
 
-## 项目结构
+## 项目状态
 
-```
-ai_hub_daily/
-├── src/
-│   ├── fetcher/          # 内容抓取模块
-│   │   ├── __init__.py
-│   │   ├── reddit.py     # Reddit 搜索
-│   │   ├── x.py          # X/Twitter
-│   │   ├── hackernews.py # HackerNews
-│   │   ├── github.py     # GitHub Trending
-│   │   └── zhihu.py      # 知乎
-│   ├── processor/        # 内容处理模块
-│   │   ├── __init__.py
-│   │   ├── classifier.py # 智能分类
-│   │   ├── scorer.py     # 质量评分
-│   │   └── dedup.py      # 去重
-│   ├── reporter/         # 报告生成模块
-│   │   ├── __init__.py
-│   │   └── telegram.py   # Telegram 格式
-│   └── utils/
-│       ├── __init__.py
-│       └── config.py     # 配置管理
-├── scripts/
-│   └── workflow.sh       # 主工作流
-├── config/
-│   └── thresholds.yaml   # 质量阈值配置
-├── requirements.txt
-├── README.md
-└── LICENSE
-```
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| Reddit fetcher | ✅ 可用 | 原生 API + autocli 双模式 |
+| X/Twitter fetcher | ⚠️ 部分 | 需 X_BEARER_TOKEN 或 autocli |
+| HackerNews fetcher | ✅ 可用 | 官方 API |
+| GitHub fetcher | ⚠️ 部分 | 需 GitHub Token (高频率) |
+| Zhihu fetcher | 🚧 未实现 | 需要登录态 |
+| Processor | ✅ 完整 | 评分、分类、去重 |
+| Reporter | ✅ 完整 | Telegram 格式 |
 
 ## 安装
+
+### 基础依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 依赖工具
+### 可选: autocli (推荐)
 
-- [autocli](https://github.com/yourusername/autocli) - 多平台 CLI 工具
-- Python 3.9+
-
-## 配置
-
-### 环境变量
+autocli 提供更稳定的社交内容抓取，支持已登录账号的个性化内容。
 
 ```bash
-# 可选: 启用 LLM 摘要
-export OPENAI_API_KEY="your-key"
+# 安装
+npm install -g @flyingcloud/autocli
+# 或
+pip install autocli
 
-# 可选: 自定义质量阈值
-export QUALITY_THRESHOLD_REDDIT_SCORE=10
-export QUALITY_THRESHOLD_REDDIT_COMMENTS=5
+# 文档: https://github.com/flyingcloud-code/autocli
 ```
 
-### 质量阈值
-
-| 平台 | 默认阈值 |
-|------|----------|
-| Reddit | score ≥ 10 或 comments ≥ 5 |
-| HackerNews | points ≥ 20 或 comments ≥ 5 |
-| GitHub | stars ≥ 50 |
-| X/Twitter | likes ≥ 20 或 retweets ≥ 5 |
-| Zhihu | votes ≥ 10 或 answers ≥ 3 |
-
-## 使用
-
-### 手动运行
+### 可选: API Tokens
 
 ```bash
-# 完整工作流
+# X/Twitter (免费层 100 req/15min)
+export X_BEARER_TOKEN="your_token"
+
+# GitHub (提高速率限制)
+export GITHUB_TOKEN="your_token"
+
+# LLM 摘要 (可选)
+export OPENAI_API_KEY="your_key"
+```
+
+## 使用模式
+
+### 模式 A: 原生 API (无需 autocli)
+
+```bash
+# 使用 Reddit/HN 公开 API
+python main.py fetch --mode native
+```
+
+**限制**:
+- Reddit: 无搜索，只能抓取特定 subreddit hot
+- X: 需要 Bearer Token
+- GitHub: 速率限制严格 (60 req/hour)
+
+### 模式 B: autocli (推荐)
+
+```bash
+# 先登录各平台
+autocli social reddit login
+autocli social x login --browser
+
+# 然后运行
+python main.py fetch --mode autocli
+```
+
+**优势**:
+- 支持搜索功能
+- 访问个性化内容
+- 更高稳定性
+
+### 完整工作流
+
+```bash
+# 方式 1: 脚本
 bash scripts/workflow.sh
 
-# 单独模块
-python -m src.fetcher.reddit
-python -m src.processor.classifier
-python -m src.reporter.telegram
+# 方式 2: Python CLI
+python main.py all --mode native      # 原生 API
+python main.py all --mode autocli     # autocli
+
+# 方式 3: 分步
+python main.py fetch --mode native
+python main.py process
+python main.py report
 ```
 
 ### 定时任务
 
 ```cron
 0 8 * * * cd /path/to/ai_hub_daily && bash scripts/workflow.sh
+```
+
+## 配置
+
+### 质量阈值 (config/thresholds.yaml)
+
+```yaml
+reddit:
+  score: 10
+  comments: 5
+
+hackernews:
+  points: 20
+  comments: 5
+
+x:
+  likes: 20
+  retweets: 5
+```
+
+### 环境变量覆盖
+
+```bash
+export QUALITY_THRESHOLD_REDDIT_SCORE=20
+export QUALITY_THRESHOLD_REDDIT_COMMENTS=10
 ```
 
 ## 输出格式
@@ -128,6 +165,8 @@ python -m src.reporter.telegram
 
 📈 平台分布
 🔴 Reddit: 73 条
+⚪ X: 12 条
+🟠 HN: 15 条
 
 🏷️ 热门分类
 • AI_Skills: 23 条
@@ -148,14 +187,36 @@ python -m src.reporter.telegram
 | 分类 | 关键词 |
 |------|--------|
 | AI_Agents | agent, autonomous, workflow, langgraph, crewai |
-| AI_LLM | llm, gpt, claude, transformer, fine-tune |
+| AI_LLM | llm, gpt, claude, transformer, fine-tune, reasoning |
 | AI_Products | product, launch, tool, platform, api |
 | AI_Research | paper, research, arxiv, benchmark |
-| AI_Ethics | ethic, safety, bias, privacy, regulation |
-| AI_Business | startup, funding, revenue, market |
-| AI_Infra | deployment, gpu, hardware, scaling |
-| AI_Skills | tutorial, guide, how to, learn |
-| Programming | code, github, framework, library |
+| AI_Ethics | ethic, safety, bias, privacy, regulation, job |
+| AI_Business | startup, funding, revenue, market, investment |
+| AI_Infra | deployment, gpu, hardware, scaling, apple silicon |
+| AI_Skills | tutorial, guide, how to, learn, beginner |
+| Programming | code, github, framework, library, open source |
+
+## 依赖说明
+
+### 必需
+- Python 3.9+
+- requests
+- pyyaml
+
+### 可选但推荐
+- [autocli](https://github.com/flyingcloud-code/autocli) - 社交内容抓取
+- OpenAI API Key - LLM 摘要生成
+
+### 平台特定
+- X_BEARER_TOKEN - X/Twitter API 访问
+- GITHUB_TOKEN - GitHub API 速率提升
+
+## 已知限制
+
+1. **Reddit**: 原生模式只能抓 subreddit hot，搜索需要 OAuth
+2. **X**: 免费 API 层限制 100 req/15min
+3. **GitHub**: 无 Token 时 60 req/hour
+4. **Zhihu**: 未实现（需要登录态）
 
 ## 许可证
 
