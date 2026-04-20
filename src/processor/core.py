@@ -12,37 +12,50 @@ def calculate_quality_score(item: Dict) -> float:
     """
     计算内容质量分数 0-100
     
-    算法:
-    - Reddit: score/10 + comments*2
-    - HN: points + comments*3
-    - GitHub: stars/50
-    - X: likes/10 + retweets*2
-    - Zhihu: votes/5
+    使用归一化算法，让不同平台可比较:
+    - 0-30: 低质量
+    - 30-70: 中等质量  
+    - 70-100: 高质量
     """
     platform = item.get("platform", "")
     engagement = item.get("engagement", {})
-    score = 0.0
     
     if platform == "Reddit":
         s = engagement.get("score", 0)
         c = engagement.get("comments", 0)
-        score = (s / 10) + (c * 2)
+        # 归一化: 50 upvotes + 25 comments ≈ 100分
+        score = min(100, (s / 2) + (c * 1.5))
+    
     elif platform == "HackerNews":
         p = engagement.get("points", 0)
         c = engagement.get("comments", 0)
-        score = p + (c * 3)
+        # HN 分数普遍较高: 50 points + 20 comments ≈ 100分
+        score = min(100, (p / 1) + (c * 2))
+    
     elif platform == "GitHub":
         s = engagement.get("stars", 0)
-        score = s / 50
+        # GitHub: 对数归一化，1000 stars ≈ 80分, 10000 ≈ 100分
+        import math
+        if s > 0:
+            score = min(100, 30 + 30 * math.log10(s) / 3)  # 1000 stars = 60分, 10000 = 90分
+        else:
+            score = 0
+    
     elif platform == "X":
         l = engagement.get("likes", 0)
         r = engagement.get("retweets", 0)
-        score = (l / 10) + (r * 2)
+        # X: 100 likes + 20 retweets ≈ 100分
+        score = min(100, (l / 1.5) + (r * 3))
+    
     elif platform == "Zhihu":
         v = engagement.get("votes", 0)
-        score = v / 5
+        # 知乎: 200 votes ≈ 100分
+        score = min(100, v / 2)
     
-    return min(100.0, round(score, 1))
+    else:
+        score = 50  # 默认中等
+    
+    return round(score, 1)
 
 
 def classify_content(item: Dict) -> List[str]:
@@ -119,11 +132,11 @@ def process_items(items: List[Dict]) -> List[Dict]:
         item["id"] = generate_content_hash(item)
         
         # 简单摘要（可扩展为 LLM 摘要）
-        text = item.get("text", "")
-        if len(text) > 300:
+        text = item.get("text") or item.get("summary", "")
+        if text and len(text) > 300:
             item["summary"] = text[:300].rsplit(" ", 1)[0] + "..."
         else:
-            item["summary"] = text
+            item["summary"] = text or ""
         
         processed.append(item)
     
