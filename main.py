@@ -15,6 +15,8 @@ from src.fetcher.reddit import fetch_reddit
 from src.fetcher.x import fetch_x
 from src.fetcher.hackernews import fetch_hackernews
 from src.fetcher.github import fetch_github
+from src.fetcher.devto import fetch_devto
+from src.fetcher.producthunt import fetch_producthunt
 from src.processor.core import process_items, detect_trends
 from src.reporter.telegram import generate_report
 
@@ -44,6 +46,16 @@ def run_fetch(mode: str = "native"):
     # GitHub (mode dependent)
     gh_items = fetch_github(mode=mode)
     all_items.extend(gh_items)
+    print()
+    
+    # Dev.to (public API, always native)
+    devto_items = fetch_devto()
+    all_items.extend(devto_items)
+    print()
+    
+    # Product Hunt (RSS, always native)
+    ph_items = fetch_producthunt()
+    all_items.extend(ph_items)
     print()
     
     print("=" * 50)

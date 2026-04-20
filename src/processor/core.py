@@ -52,6 +52,15 @@ def calculate_quality_score(item: Dict) -> float:
         # 知乎: 200 votes ≈ 100分
         score = min(100, v / 2)
     
+    elif platform == "Dev.to":
+        l = engagement.get("likes", 0)
+        c = engagement.get("comments", 0)
+        score = min(100, (l / 3) + (c * 3))
+    
+    elif platform == "ProductHunt":
+        v = engagement.get("votes", 0)
+        score = min(100, v / 3)
+    
     else:
         score = 50  # 默认中等
     

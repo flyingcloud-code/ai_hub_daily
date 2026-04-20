@@ -116,6 +116,10 @@ def format_engagement(item: Dict) -> str:
         return f"❤️{engagement.get('likes', 0)} 🔄{engagement.get('retweets', 0)}"
     elif platform == "Zhihu":
         return f"👍{engagement.get('votes', 0)}"
+    elif platform == "Dev.to":
+        return f"❤️{engagement.get('likes', 0)} 💬{engagement.get('comments', 0)}"
+    elif platform == "ProductHunt":
+        return f"🔺{engagement.get('votes', 0)}"
     
     return ""
 
@@ -151,7 +155,9 @@ def generate_message(items: List[Dict], trends: Dict, date: str) -> str:
         "HackerNews": "🟠",
         "GitHub": "⚫",
         "X": "⚪",
-        "Zhihu": "🔵"
+        "Zhihu": "🔵",
+        "Dev.to": "🟢",
+        "ProductHunt": "🟡",
     }
     
     # 构建消息
