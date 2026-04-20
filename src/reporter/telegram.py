@@ -223,12 +223,19 @@ def generate_report(
     """
     生成完整报告
     
+    Args:
+        data_dir: 处理后数据目录
+        output_dir: 报告输出目录
+        date: 日期 (YYYY-MM-DD)
+        previous_date: 前一天日期 (用于趋势对比)
+    
     Returns:
         Telegram 消息文本
     """
     # 加载数据
     today_items = load_today_data(data_dir, date)
     
+    # 加载昨日数据
     previous_items = []
     if previous_date:
         previous_items = load_today_data(data_dir, previous_date)
@@ -251,7 +258,48 @@ def generate_report(
     return message
 
 
+def main():
+    """CLI entry point"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="AI_HUB Telegram Reporter")
+    parser.add_argument("--data-dir", required=True, help="Processed data directory")
+    parser.add_argument("--output-dir", required=True, help="Output directory")
+    parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"), help="Date (YYYY-MM-DD)")
+    parser.add_argument("--previous-date", help="Previous date for comparison")
+    
+    args = parser.parse_args()
+    
+    data_dir = Path(args.data_dir)
+    output_dir = Path(args.output_dir)
+    
+    if not data_dir.exists():
+        print(f"❌ Data directory not found: {data_dir}")
+        exit(1)
+    
+    # 自动计算前一天
+    previous_date = args.previous_date
+    if not previous_date:
+        try:
+            date_obj = datetime.strptime(args.date, "%Y-%m-%d")
+            previous_date = (date_obj - timedelta(days=1)).strftime("%Y-%m-%d")
+        except:
+            pass
+    
+    message = generate_report(data_dir, output_dir, args.date, previous_date)
+    
+    print("\n" + "=" * 50)
+    print("REPORT PREVIEW:")
+    print("=" * 50)
+    print(message[:1500] + "..." if len(message) > 1500 else message)
+
+
 if __name__ == "__main__":
+    main()
+
+
+# Legacy main (kept for backward compatibility)
+def _legacy_main():
     import sys
     
     date = datetime.now().strftime("%Y-%m-%d")
