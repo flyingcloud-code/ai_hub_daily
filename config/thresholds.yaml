@@ -1,0 +1,112 @@
+# 质量阈值配置
+# 可通过环境变量覆盖: QUALITY_THRESHOLD_REDDIT_SCORE=20
+
+reddit:
+  score: 10        # 帖子分数
+  comments: 5      # 评论数
+
+hackernews:
+  points: 20       # 点赞数
+  comments: 5      # 评论数
+
+github:
+  stars: 50        # 星标数（新仓库适当降低）
+  is_new: true     # 是否只关注新仓库
+
+x:
+  likes: 20        # 点赞数
+  retweets: 5      # 转发数
+
+zhihu:
+  votes: 10        # 赞同数
+  answers: 3       # 回答数
+
+# 分类关键词映射
+categories:
+  AI_Agents:
+    - agent
+    - autonomous
+    - workflow
+    - orchestration
+    - crewai
+    - langgraph
+    - autogen
+    - operator
+  
+  AI_LLM:
+    - llm
+    - "large language model"
+    - gpt
+    - claude
+    - gemini
+    - transformer
+    - fine-tune
+    - reasoning
+  
+  AI_Products:
+    - product
+    - launch
+    - release
+    - tool
+    - platform
+    - api
+    - sdk
+  
+  AI_Research:
+    - paper
+    - research
+    - study
+    - arxiv
+    - benchmark
+    - evaluation
+    - sota
+  
+  AI_Ethics:
+    - ethic
+    - safety
+    - alignment
+    - bias
+    - privacy
+    - regulation
+    - "job"
+    - replace
+    - doomsday
+  
+  AI_Business:
+    - startup
+    - funding
+    - revenue
+    - business
+    - market
+    - invest
+    - valuation
+  
+  AI_Infra:
+    - infrastructure
+    - deployment
+    - scaling
+    - gpu
+    - hardware
+    - mps
+    - cuda
+    - "apple silicon"
+    - local
+  
+  AI_Skills:
+    - tutorial
+    - guide
+    - "how to"
+    - learn
+    - course
+    - beginner
+    - "getting started"
+    - tips
+  
+  Programming:
+    - code
+    - github
+    - repository
+    - framework
+    - library
+    - sdk
+    - open source
